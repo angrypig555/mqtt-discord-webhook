@@ -23,7 +23,7 @@ services:
     environment:
       - MQTT_BROKER_IP=BROKER_IP_HERE
       - MQTT_TOPIC=TOPIC_HERE
-      - MQTT_DC_WEBHOOK=WEBHOOK_URL_HERE
+      - MQTT_DC_WEBHOOK=/run/secrets/dc_webhook
       - MQTT_USER=USER_HERE
       - MQTT_PASS=/run/secrets/mqtt_pass
       - MQTT_DC_MESSAGE=MESSAGE_TO_SEND_HERE
@@ -31,5 +31,7 @@ services:
 
 secrets:
   mqtt_pass:
+    external: true
+  dc_webhook:
     external: true
 ```
