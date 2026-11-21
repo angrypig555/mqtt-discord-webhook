@@ -1,4 +1,5 @@
 # note: this is meant to be used with frigate so it parses the json for frigate stuff but it can be modified
+# TODO: grab screenshot from http://<frigate-host>:5000/api/events/<event_id>/snapshot.jpg
 import json
 import os
 import time
