@@ -6,14 +6,21 @@ from dotenv import load_dotenv
 import paho.mqtt.client as mqtt
 import requests
 
+def load_secret_or_env(env_name: str, default: str | None = None) -> str | None:
+    val = os.getenv(env_name, default)
+    if val and os.path.isfile(val):
+        with open(val, "r", encoding="utf-8") as f:
+            return f.read().strip()
+    return val
+
 load_dotenv()
 
 ip = os.environ["MQTT_BROKER_IP"]
 port = int(os.getenv("MQTT_PORT", "1883"))
 topic = os.getenv("MQTT_TOPIC", "frigate/events")
 username = os.getenv("MQTT_USER")
-password = os.getenv("MQTT_PASS")
-webhook_url = os.getenv("MQTT_DC_WEBHOOK")
+password = load_secret_or_env("MQTT_PASS")
+webhook_url = load_secret_or_env("MQTT_DC_WEBHOOK")
 webhook_msg = os.getenv("MQTT_DC_MESSAGE")
 
 payload = {"content": webhook_msg}
