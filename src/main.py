@@ -1,22 +1,63 @@
-import paho.mqtt.client as mqtt
-from paho.mqtt import subscribe
+# note: this is meant to be used with frigate so it parses the json for frigate stuff but it can be modified
+import json
 import os
+import time
 from dotenv import load_dotenv
+import paho.mqtt.client as mqtt
+import requests
 
 load_dotenv()
 
 ip = os.environ["MQTT_BROKER_IP"]
-topic = os.environ["MQTT_TOPIC"]
-webhook = os.environ["MQTT_DC_WEBHOOK"]
-username = os.environ["MQTT_USER"]
-password = os.environ["MQTT_PASS"]
+port = int(os.getenv("MQTT_PORT", "1883"))
+topic = os.getenv("MQTT_TOPIC", "frigate/events")
+username = os.getenv("MQTT_USER")
+password = os.getenv("MQTT_PASS")
+webhook_url = os.getenv("MQTT_DC_WEBHOOK")
+webhook_msg = os.getenv("MQTT_DC_MESSAGE")
 
-print("mqtt discord webhook")
-print("using topic ", topic, " and broker ", ip)
+payload = {"content": webhook_msg}
 
-auth = {"username": username, "password": password} if username else None
+def on_connect(client, userdata, flags, reason_code, properties=None):
+    if reason_code == 0:
+        print("Connected to MQTT broker")
+        client.subscribe(topic, qos=1)
+    else:
+        print(f"Connect failed: {reason_code}")
 
-m = subscribe.simple(topic, hostname=ip, retained=False, msg_count=2, auth=auth)
-for a in m:
-    print(a.topic)
-    print(a.payload)
+
+def on_message(client, userdata, msg):
+    raw = msg.payload.decode("utf-8", errors="replace")
+    print(f"Topic: {msg.topic}")
+    try:
+        data = json.loads(raw)
+        event_type = data.get("type")
+        after = data.get("after", {})
+        print(
+            f"type={event_type} | id={after.get('id')} | "
+            f"camera={after.get('camera')} | label={after.get('label')}"
+        )
+        response = requests.post(webhook_url, json=payload)
+        if response.status_code != 200 and response.status_code != 204:
+            print("WEBHOOK FAILED! status code: ", response.status_code)
+        else:
+            print("webhook sent succesfully with response", response.status_code)
+    except json.JSONDecodeError:
+        print(raw)
+
+
+client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2)
+if username:
+    client.username_pw_set(username, password)
+
+client.on_connect = on_connect
+client.on_message = on_message
+
+while True:
+    try:
+        client.connect(ip, port, keepalive=60)
+        # Blocks and processes incoming messages continuously until disconnected
+        client.loop_forever(retry_first_connection=True)
+    except Exception as exc:
+        print(f"MQTT loop error: {exc} — retrying in 5s...")
+        time.sleep(5)

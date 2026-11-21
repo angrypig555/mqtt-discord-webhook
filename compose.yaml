@@ -1,0 +1,16 @@
+services:
+  webhook:
+    image: angrypig555/mqtt-discord-webhook
+    restart: unless-stopped
+    environment:
+      - MQTT_BROKER_IP=BROKER_IP_HERE
+      - MQTT_TOPIC=TOPIC_HERE
+      - MQTT_DC_WEBHOOK=WEBHOOK_URL_HERE
+      - MQTT_USER=USER_HERE
+      - MQTT_PASS=/run/secrets/mqtt_pass
+      - MQTT_DC_MESSAGE=MESSAGE_TO_SEND_HERE
+      - MQTT_PORT=PORT_HERE # usually 1883
+
+secrets:
+  mqtt_pass:
+    external: true

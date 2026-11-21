@@ -1,0 +1,7 @@
+.env
+target/
+.venv/
+LICENSE
+.gitignore
+README.md
+build_containers.sh
